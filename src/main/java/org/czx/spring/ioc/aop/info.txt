@@ -1,0 +1,246 @@
+aop 面向切面编程
+  一般操作是设置那些需要添加切面的点：比如那些包下的类需要用到切面
+  第二是切面增强原生方法什么或者，比如方法之前添加什么方法之后添加什么
+
+
+  实现一般流程：初始化时候加载切面的配置 AOPConfig
+               以及动态代理实现添加切面配置
+
+
+  例子：
+  事务添加切面的方式配置
+
+
+  <?xml version="1.0" encoding="UTF-8"?>
+  <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee"
+      xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+      id="WebApp_ID" version="2.5">
+      <display-name>Archetype Created Web Application</display-name>
+      <context-param>
+          <param-name>contextConfigLocation</param-name>
+          <param-value>classpath:conf/spring-mybatis.xml;
+          </param-value>
+      </context-param>
+      <context-param>
+          <param-name>webAppRootKey</param-name>
+          <param-value>wmsservice.root</param-value>
+      </context-param>
+      <filter>
+          <filter-name>SpringEncodingFilter</filter-name>
+          <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+          <init-param>
+              <param-name>encoding</param-name>
+              <param-value>UTF-8</param-value>
+          </init-param>
+          <init-param>
+              <param-name>forceEncoding</param-name>
+              <param-value>true</param-value>
+          </init-param>
+      </filter>
+      <filter-mapping>
+          <filter-name>SpringEncodingFilter</filter-name>
+          <url-pattern>/*</url-pattern>
+      </filter-mapping>
+      <context-param>
+          <param-name>log4jConfigLocation</param-name>
+          <param-value>classpath:conf/log4j.properties</param-value>
+      </context-param>
+      <context-param>
+          <param-name>log4jRefreshInterval</param-name>
+          <param-value>6000</param-value>
+      </context-param>
+      <listener>
+          <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+      </listener>
+      <listener>
+          <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+      </listener>
+      <filter>
+          <filter-name>loginFilter</filter-name>
+          <filter-class>com.XXX.filter.LoginFilterController</filter-class>
+      </filter>
+      <filter-mapping>
+          <filter-name>loginFilter</filter-name>
+          <url-pattern>*.shtml</url-pattern>
+      </filter-mapping>
+      <servlet>
+          <servlet-name>spring</servlet-name>
+          <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+          <init-param>
+              <param-name>contextConfigLocation</param-name>
+              <param-value>classpath:conf/spring-mvc.xml</param-value>
+          </init-param>
+          <load-on-startup>1</load-on-startup>
+      </servlet>
+      <servlet-mapping>
+          <servlet-name>spring</servlet-name>
+          <url-pattern>/</url-pattern>
+      </servlet-mapping>
+      <servlet>
+          <description>This is the description of my J2EE component</description>
+          <display-name>This is the display name of my J2EE component</display-name>
+          <servlet-name>LoginFilter</servlet-name>
+          <servlet-class>filter.LoginFilter</servlet-class>
+      </servlet>
+
+      <servlet-mapping>
+          <servlet-name>spring</servlet-name>
+          <url-pattern>*.shtml</url-pattern>
+      </servlet-mapping>
+
+      <servlet>
+          <servlet-name>ImgServlet</servlet-name>
+          <servlet-class>com.XXX.servlet.ImgServlet</servlet-class>
+      </servlet>
+      <servlet-mapping>
+          <servlet-name>ImgServlet</servlet-name>
+          <url-pattern>/CreateImage</url-pattern>
+      </servlet-mapping>
+
+      <welcome-file-list>
+          <welcome-file>login.shtml</welcome-file>
+      </welcome-file-list>
+
+      <!-- 404 页面不存在错误 -->
+      <error-page>
+          <error-code>404</error-code>
+          <location>/errorPage404.jsp</location>
+      </error-page>
+      <!-- 500 服务器内部错误 -->
+      <error-page>
+          <error-code>500</error-code>
+          <location>/errorPage500.jsp</location>
+      </error-page>
+      <context-param>
+          <param-name>webAppRootKey</param-name>
+          <param-value> app.root </param-value>
+      </context-param>
+
+  </web-app>
+  spring-mybatis.xml
+
+   <?xml version="1.0" encoding="UTF-8"?>
+  <beans xmlns="http://www.springframework.org/schema/beans"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+      xmlns:context="http://www.springframework.org/schema/context"
+      xmlns:tx="http://www.springframework.org/schema/tx"
+      xmlns:aop="http://www.springframework.org/schema/aop"
+      xmlns:mvc="http://www.springframework.org/schema/mvc"
+      xsi:schemaLocation="http://www.springframework.org/schema/beans
+                          http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                          http://www.springframework.org/schema/context
+                          http://www.springframework.org/schema/context/spring-context-4.0.xsd
+                          http://www.springframework.org/schema/mvc
+                          http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+                          http://www.springframework.org/schema/tx
+                          http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+                          http://www.springframework.org/schema/aop
+                          http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+  <!-- 自动扫描com.XXX下的service.impl -->
+      <context:component-scan base-package="com.XXX" >
+      </context:component-scan>
+
+      <!-- 引入配置文件 -->
+       <!-- <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+          <property name="locations" value="classpath:conf/jdbc.properties,conf/redis.properties" />
+      </bean>  -->
+
+      <bean id="propertyConfigurer"
+          class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+          <property name="locations">
+              <list>
+                  <value>classpath:conf/jdbc.properties</value>
+              </list>
+          </property>
+      </bean>
+
+
+  <!--    <bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean" scope="singleton">
+
+        <property name="jndiName" value="jdbc/MySQLDB"></property>
+
+        <property name="resourceRef" value="true"></property>
+
+     </bean> -->
+
+      <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+          destroy-method="close">
+          <property name="driverClassName" value="${driver}" />
+          <property name="url" value="${url}" />
+          <property name="username" value="${username}" />
+          <property name="password" value="${password}" />
+          <!-- 初始化连接大小 -->
+          <property name="initialSize" value="${initialSize}"></property>
+          <!-- 连接池最大数量 -->
+          <property name="maxActive" value="${maxActive}"></property>
+          <!-- 连接池最大空闲 -->
+          <property name="maxIdle" value="${maxIdle}"></property>
+          <!-- 连接池最小空闲 -->
+          <property name="minIdle" value="${minIdle}"></property>
+          <!-- 获取连接最大等待时间 -->
+          <property name="maxWait" value="${maxWait}"></property>
+      </bean>
+
+      <!-- spring和MyBatis完美整合，不需要mybatis的配置映射文件 -->
+      <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+          <property name="dataSource" ref="dataSource" />
+          <!-- 自动扫描mapping.xml文件 -->
+          <property name="configLocation" value="classpath:conf/mybatis-config.xml"></property>
+          <property name="mapperLocations" value="classpath*:com/XXX/service/**/mapper/*.xml"></property>
+
+      </bean>
+
+      <!-- DAO接口所在包名，Spring会自动查找其下的类 -->
+      <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+          <property name="basePackage" value="com.XXX.service.**.dao" />
+          <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+      </bean>
+
+      <!-- (事务管理)transaction manager, use JtaTransactionManager for global tx -->
+      <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+          <property name="dataSource" ref="dataSource" />
+      </bean>
+
+       <!-- 事务控制   -->
+      <tx:annotation-driven transaction-manager="transactionManager" />
+
+      <!-- 拦截器方式配置事物 -->
+      <tx:advice id="transactionAdvice" transaction-manager="transactionManager">
+          <tx:attributes>
+              <tx:method name="save*" propagation="REQUIRED"  read-only="false"
+                  rollback-for="java.lang.RuntimeException" />
+             <tx:method name="add*" propagation="REQUIRED"  read-only="false"
+                  rollback-for="java.lang.RuntimeException" />
+              <tx:method name="update*" propagation="REQUIRED" />
+              <tx:method name="delete*" propagation="REQUIRED" />
+              <tx:method name="get*" propagation="SUPPORTS" read-only="true" />
+              <tx:method name="find*" propagation="SUPPORTS" read-only="true" />
+              <tx:method name="select*" propagation="SUPPORTS" read-only="true" />
+
+          </tx:attributes>
+      </tx:advice>
+  <!--        Spring aop事务管理 -->
+      <aop:config>
+          <aop:pointcut id="transactionPointcut"
+              expression="execution(public * com.XXX.service.*.*.*.*(..))" />
+          <aop:advisor pointcut-ref="transactionPointcut"     advice-ref="transactionAdvice" />
+      </aop:config>
+
+      <!-- 日志管理 -->
+      <aop:config>
+          <aop:aspect id="aspect" ref="aspectBean">
+              <aop:pointcut id="logService"
+                  expression="execution(* com.XXX.service.*.*.*.*(..))" />
+              <aop:before pointcut-ref="logService" method="doBefore"/>
+              <aop:after pointcut-ref="logService" method="doAfter"/>
+              <aop:around pointcut-ref="logService" method="doAround"/>
+              <aop:after-throwing pointcut-ref="logService" method="doAfterThrow"/>
+          </aop:aspect>
+      </aop:config>
+      <bean id="aspectBean" class="com.XXX.common.Aspect" />
+
+
+  </beans>

@@ -1,0 +1,18 @@
+ApplicationContext
+
+   refresh()方法，该方法分为以下几步
+
+       1.定位
+       reader(conf)       方法由BeanDefinitionReader去实现具体的操作，改
+                          Reader需要实现的内容：
+                          根据路径加载配置信息，扫描文件内容，解析文件成得到需要所有的beanName
+                          封装beanName对应的类信息。
+
+       2.加载
+       load()             返回上面定义的所有beanName
+
+
+       3.注册             根据加载的beanName去封装BeanDefinition，然后放回ApplicationContext中的一个类型为Map的属性里面
+
+       至此Spring的初始化完成。所定义的类有ApplicationContext，BeanDefinitionReader，BeanDefinition。在spring中都用的接口，
+       便于扩展，在这里为了方便就都用实现类。
